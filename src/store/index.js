@@ -2,14 +2,14 @@
  * @Description: 
  * @Author: zxd
  * @Date: 2022-10-31 13:22:29
- * @LastEditTime: 2022-10-31 20:01:15
+ * @LastEditTime: 2022-11-01 14:35:22
  * @LastEditors: zxd
  * @Reference: 头部注释 window`：`ctrl+alt+i`,`mac`：`ctrl+cmd+i 函数注释**：`window`：`ctrl+alt+t`,`mac`：`ctrl+cmd+t`
  * @FilePath: /潜心学习系列/vueX_custom/src/store/index.js
  */
 import Vue from "vue";
-// import vueX from "../vuex";
-import vueX from "vuex";
+import vueX from "../vuex";
+// import vueX from "vuex";
 Vue.use(vueX)
 let modulesA = {
   namespaced:true,
@@ -24,7 +24,8 @@ let modulesA = {
   },
   actions:{
     updateA({commit},params){
-      commit("updateA",params)
+      console.log()
+      commit("modulesA/updateA",params)
     }
   },
   getters:{
@@ -76,3 +77,4 @@ export default new vueX.Store({
     }
   },
 })
+

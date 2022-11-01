@@ -2,7 +2,7 @@
  * @Description: 
  * @Author: zxd
  * @Date: 2022-10-30 22:03:20
- * @LastEditTime: 2022-10-31 20:09:44
+ * @LastEditTime: 2022-11-01 14:38:23
  * @LastEditors: zxd
  * @Reference: 头部注释 window`：`ctrl+alt+i`,`mac`：`ctrl+cmd+i 函数注释**：`window`：`ctrl+alt+t`,`mac`：`ctrl+cmd+t`
  * @FilePath: /潜心学习系列/vueX_custom/src/vuex.js
@@ -28,14 +28,12 @@ class Store{
     this.getters = {};
     this.mutations = {};
     this.actions = {};
-    this._modules = new moduleCollection(options)
+    this._modules = new ModuleCollection(options)
     this.commit = (type,param)=>{
-      console.log(this)
-      Array.isArray(this.mutations[type]) ? this.mutations[type].forEach(fn=>fn(param)) :this.mutations[type](param)
+      this.mutations[type].forEach(fn=>fn(param))
     }
     this.dispatch = (type,param)=>{
-      Array.isArray(this.actions[type]) ? this.actions[type].forEach(fn=>fn(param)) :this.actions[type](param)
-
+      this.actions[type].forEach(fn=>fn(param))
     }
     const state = options.state;
     const path = [];
@@ -65,44 +63,38 @@ function forEachValue(obj,fn){
 }
 // 注册getter
 function registerGetter(store,getterName,getterFn,currentModule){
-  Object.defineProperty(store.getters,key,{
+  Object.defineProperty(store.getters,getterName,{
     get:()=>{
       return getterFn.call(store,currentModule.state)
     }
   })
 }
 // 注册mutations
-function registerMutation(store,mutationName,mutationFn,currentModule,moduleName){
-  if(currentModule._rootModule.namespaced){
-    store.mutations[moduleName+'/'+mutationName] = (payload)=>{
-      mutationFn.call(store,currentModule.state,payload)
-    }
-  }else{
+function registerMutation(store,mutationName,mutationFn,currentModule,){
     let mutationArr = store.mutations[mutationName] || (store.mutations[mutationName] = []);
     mutationArr.push((payload)=>{
       mutationFn.call(store,currentModule.state,payload)
     })
-  }
 }
 
 // 注册actions
-function registerAction(store,actionName,actionFn,currentModule,moduleName){
-  if(currentModule._rootModule.namespaced){
-    store.actions[moduleName+'/'+actionName] = (payload)=>{
-      actionFn.call(store,store,payload)
-    }
-  }else{
+function registerAction(store,actionName,actionFn){
     let actionArr = store.actions[actionName] || (store.actions[actionName] = []);
+
     actionArr.push((payload)=>{
-      actionFn.call(store,store,payload)
+      let res = actionFn.call(store,store,payload)
+      if (!(res && typeof res.then === 'function')) {
+        res = Promise.resolve(res);
+      }
+      return res
+
     })
-  }
 }
 
 
 
 // 模块收集
-class moduleCollection{
+class ModuleCollection{
   constructor(rootModule){
     this.register([],rootModule)
   }
@@ -129,8 +121,17 @@ class moduleCollection{
   }
 }
 
+ModuleCollection.prototype.getNamespace = function getNamespace (path) {
+  var module = this.root;
+  return path.reduce((namespace,key)=>{
+    module = module._children[key]
+    return namespace + (module._rootModule.namespaced ? key + '/' : '');
+  },'')
+};
+
 // 递归状态树，挂载getters，actions，mutations
 function instalModule(store,rootState,path,rootModule){
+  const namespace = store._modules.getNamespace(path);
   if (path.length > 0) {
     const parent = path.slice(0,-1).reduce((state,key)=>{
       return state[key]
@@ -142,19 +143,22 @@ function instalModule(store,rootState,path,rootModule){
   let getters = rootModule._rootModule.getters
   if (getters) {
     forEachValue(getters, (getterFn, getterName) => {
-      registerGetter(store, getterName, getterFn);
+      getterName = namespace + getterName;
+      registerGetter(store, getterName, getterFn,rootModule);
     });
   }
   let mutations = rootModule._rootModule.mutations
   if (mutations) {
     forEachValue(mutations, (mutationFn, mutationName) => {
-      registerMutation(store, mutationName, mutationFn)
+      mutationName = namespace + mutationName;
+      registerMutation(store, mutationName, mutationFn,rootModule)
     });
   }
   let actions = rootModule._rootModule.actions
   if (actions) {
     forEachValue(actions, (actionFn, actionName) => {
-      registerAction(store, actionName, actionFn);
+      actionName = namespace + actionName;
+      registerAction(store, actionName, actionFn,rootModule);
     });
   }
   forEachValue(rootModule._children, (child, key) => {
@@ -163,8 +167,45 @@ function instalModule(store,rootState,path,rootModule){
 
 }
 
+const mapState = stateList => {
+  return stateList.reduce((prev,stateName)=>{
+    prev[stateName] =function(){
+      return this.$store.state[stateName]
+    }
+    return prev
+  },{})
+}
+const mapGetters = gettersList => {
+  return gettersList.reduce((prev,gettersName)=>{
+    prev[gettersName] =function(){
+      return this.$store.getters[gettersName]
+    }
+    return prev
+  },{})
+}
+const mapMutations = mutationsList => {
+  return mutationsList.reduce((prev,mutationsName)=>{
+    prev[mutationsName] =function(payload){
+      return this.$store.commit(mutationsName,payload)
+    }
+    return prev
+  },{})
+}
+const mapActions = actionsList => {
+  return actionsList.reduce((prev,actionsName)=>{
+    prev[actionsName] =function(payload){
+      return this.$store.dispatch(actionsName,payload)
+    }
+    return prev
+  },{})
+}
+
 
 export default{
   install,
+  mapState,
+  mapGetters,
+  mapMutations,
+  mapActions,
   Store
 }

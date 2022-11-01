@@ -2,7 +2,7 @@
  * @Description: 
  * @Author: zxd
  * @Date: 2022-10-31 13:19:55
- * @LastEditTime: 2022-10-31 20:01:58
+ * @LastEditTime: 2022-11-01 14:35:39
  * @LastEditors: zxd
  * @Reference: 头部注释 window`：`ctrl+alt+i`,`mac`：`ctrl+cmd+i 函数注释**：`window`：`ctrl+alt+t`,`mac`：`ctrl+cmd+t`
  * @FilePath: /潜心学习系列/vueX_custom/src/App.vue
@@ -27,20 +27,21 @@ export default{
   },
   mounted(){
     this.$store.state.text = 123
-    console.log(this.$store.commit)
+    console.log(this.$store)
     setTimeout(()=>{
       this.$store.commit("updateText","实现muations更新")
     },2000)
     setTimeout(()=>{
       this.$store.dispatch("updateText","实现action更新")
+      console.log(this.$store.dispatch("updateB","实现模块B的action更新"))
     },3000)
-    console.log("开启A命名空间后的getters:",this.$store.getters['modulesA/getA'])
-    setTimeout(()=>{
-    console.log("开启A命名空间后的commit:",this.$store.commit('modulesA/updateA','开启A命名空间后的commit'))
-    },2000)
-    setTimeout(()=>{
-    console.log("开启A命名空间后的dispatch:",this.$store.dispatch('modulesA/updateA','开启A命名空间后的dispatch'))
-    },3000)
+    // console.log("开启A命名空间后的getters:",this.$store.getters['modulesA/getA'])
+    // setTimeout(()=>{
+    // console.log("开启A命名空间后的commit:",this.$store.commit('modulesA/updateA','开启A命名空间后的commit'))
+    // },2000)
+    // setTimeout(()=>{
+    // console.log("开启A命名空间后的dispatch:",this.$store.dispatch('modulesA/updateA','开启A命名空间后的dispatch'))
+    // },3000)
   }
 }
 </script>
